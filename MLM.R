@@ -54,7 +54,7 @@ hh$Herb2=hh$Herb^2
 
 #AIC = 849.6 (this is the best model)
 
-best <- lmer(PRESENCE~ (1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP), family=binomial, data=hh)
+best <- glmer(PRESENCE~ (1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP), family=binomial, data=hh)
 
 summary(best)
 ranef(best) 
@@ -66,34 +66,36 @@ nspp <- 14 #number of species
 ################################################
 # analyze data: lmer (MLM)
 
-z=lmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
+z <- glmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
 
 # compute ranef pvalues
 #Without elevation
-z1 <- lmer(PRESENCE~(1|SPP)+Elevation+Elevation2+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
+z1 <- glmer(PRESENCE~(1|SPP)+Elevation+Elevation2+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
 
 #Without Herb
-z2 <- lmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
+z2 <- glmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
 
 #Without LITU
-z3 <- lmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
+z3 <- glmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+Ca+Ca2+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
 
 #Without Ca
-z4 <- lmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+P+(0+P|SPP),family=binomial,data=hh)
+z4 <- glmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+P+(0+P|SPP),family=binomial,data=hh)
 
 #Without P
-z5 <- lmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P,family=binomial,data=hh)
+z5 <- glmer(PRESENCE~(1|SPP)+Elevation+Elevation2+(0+Elevation|SPP)+Herb+Herb2+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+Ca2+(0+Ca|SPP)+P,family=binomial,data=hh)
 
-LL <- c(attributes(z)$deviance[1], attributes(z1)$deviance[1], attributes(z2)$deviance[1], attributes(z3)$deviance[1], attributes(z4)$deviance[1], attributes(z5)$deviance[1])
+LL <- c(deviance(z), deviance(z1), deviance(z2), deviance(z3), deviance(z4), deviance(z5))
 
 mlm.pvals <- c(1-pchisq(LL[2] - LL[1],1), 1-pchisq(LL[3] - LL[1],1), 1-pchisq(LL[4] - LL[1],1), 1-pchisq(LL[5] - LL[1],1), 1-pchisq(LL[6] - LL[1],1))
 
 mlm.pvals 
 
 # compute residual effect of random effects environmental variables
-z.r <- lmer(PRESENCE~(1|SPP)+Elevation+Elevation2+Herb+Herb2+TreeBA+ACSA+LITU+Ca+Ca2+P, data=hh, family=binomial)
+z.r <- glmer(PRESENCE~(1|SPP)+Elevation+Elevation2+Herb+Herb2+TreeBA+ACSA+LITU+Ca+Ca2+P, data=hh, family=binomial)
 
-MLM.fitted <- array(attributes(z)$eta-attributes(z.r)$eta,c(nsite,nspp))
+#MLM.fitted <- array(attributes(z)$eta-attributes(z.r)$eta,c(nsite,nspp))
+MLM.fitted <- array(attributes(z)$resp[['eta']]-attributes(z.r)$resp[['eta']],c(nsite,nspp))
+
 
 rownames(MLM.fitted)=c(1:54)
 colnames(MLM.fitted)=c("ACRA","ARTR","CATH","CHMA","DILA","GALA","GEMA","LISU","POBI","SACA","THDI","TRGR","UVGR","VIRO")
@@ -126,14 +128,12 @@ arrows(arrow.coordMLM[,1],arrow.coordMLM[,2],arrow.coordMLM[,3],arrow.coordMLM[,
 
 text(1.3*-envir.points,label=c("Elevation", "Herb", "LITU", "Ca", "P"),cex=.7)
 
-
+readline("Hit return for non-hierarchical community models")
 ################################################
 # analyze data: CCA
 comm.matrix=array(hh$PRESENCE,c(nsite,nspp))
 colnames(comm.matrix)=c("ACRA","ARTR","CATH","CHMA","DILA","GALA","GEMA","LISU","POBI","SACA","THDI","TRGR","UVGR","VIRO")
 rownames(comm.matrix)=c(1:54)
-
-z=lmer(PRESENCE~(1|SPP)+Elevation+(0+Elevation|SPP)+Herb+(0+Herb|SPP)+TreeBA+ACSA+LITU+(0+LITU|SPP)+Ca+(0+Ca|SPP)+P+(0+P|SPP),family=binomial,data=hh)
 
 nx.cca=7
 
@@ -189,8 +189,6 @@ mlm.fit.lm <- rda(MLM.fitted.lm,scale=TRUE)
 
 ################################################
 # plot results
-quartz()
-dev.set(3)
 par(mfrow=c(2,2))
 
 # plot mlm
@@ -224,15 +222,14 @@ arrows(arrow.coord[,1],arrow.coord[,2],arrow.coord[,3],arrow.coord[,4],col="blac
 text(1.1*arrow.coord[,3:4],label=arrow.labels,cex=0.7)
 
 ###############################################
-dev.set(4)
-par(mfrow=c(1,2))
-
-plot(mlm.fit.lm, type="n")
-text(mlm.fit.lm,display="sites",cex=0.5,col="black")
-plot(mlm.envir.lm, col="black",cex=0.7)
-plot(rda.fit,type="n")
-text(rda.fit,cex=0.5,col="black")
-text(rda.fit,display="bp",cex=0.7)
+# par(mfrow=c(1,2))
+# 
+# plot(mlm.fit.lm, type="n")
+# text(mlm.fit.lm,display="sites",cex=0.5,col="black")
+# #plot(mlm.envir.lm, col="black",cex=0.7)
+# plot(rda.fit,type="n")
+# text(rda.fit,cex=0.5,col="black")
+# text(rda.fit,display="bp",cex=0.7)
 
 ################################################
 # method comparisons
